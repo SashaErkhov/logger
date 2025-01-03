@@ -4,8 +4,7 @@ set(CMAKE_CXX_STANDARD 17)
 add_library(LogPostgresql STATIC
         src/LogPostgresql.cpp
 )
-set(LIBPQ_INCLUDE_DIR /usr/include/postgresql/)
-include_directories(LIBPQ_INCLUDE_DIR)
+include_directories(/usr/include/postgresql/)
 target_link_libraries(LogPostgresql PRIVATE pq stdc++)
 target_include_directories(LogPostgresql
         PUBLIC include
