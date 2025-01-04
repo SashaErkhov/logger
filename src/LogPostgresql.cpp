@@ -1,16 +1,18 @@
-#include "../include/LogPostgresql.h"
+#include "LogPostgresql.h"
 #include <fstream>
 #include <iostream>
 #include <ctime>
 #include <libpq-fe.h>
 #include <sstream>
 
-namespace LogPostgresql{
+namespace LPG{
 
     const char* Logger::getDateTime__() const{
         time_t timestamp = time(0);
         time(&timestamp);
-        return ctime(&timestamp);
+        char* dt = ctime(&timestamp);
+        dt[24] = '\0';
+        return dt;
     }
 
     Logger::Logger(const char* configFile): status_(Status_::NORMAL)

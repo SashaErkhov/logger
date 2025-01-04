@@ -3,7 +3,7 @@
 
 #include <libpq-fe.h>
 
-namespace LogPostgresql
+namespace LPG
 {
 
   enum class LogLevel
