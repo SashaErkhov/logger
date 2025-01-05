@@ -33,7 +33,7 @@ jobs:
       - name: build
         run: mkdir build && cd build && cmake .. && make && cd test && make
       - name: create file test.txt
-        run: cd build/test && echo "dbname=postgres user=postgres password=postgres host=localhost port=5432" > test.txt
+        run: cd build/test && echo "dbname=postgres user=postgres host=localhost port=5432" > test.txt
       - name: test of LogPostgresql
         run: cd build/test && ./tests
       - name: test of memory of LogPostgresql
