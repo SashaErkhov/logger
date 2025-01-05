@@ -2,6 +2,7 @@
 #define LOG_POSTGRESQL_H_2024
 
 #include <libpq-fe.h>
+#include <string>
 
 namespace LPG
 {
@@ -25,10 +26,12 @@ namespace LPG
     Status_ status_;
     PGconn *conn_;
     PGresult *res_;
+    std::string configFile_;
 
     const char* getDateTime__() const;
     void swap__(Logger&);
     const char* getLevelString__(LogLevel) const;
+    void connection__();
   public:
     Logger(const char*);
     ~Logger();

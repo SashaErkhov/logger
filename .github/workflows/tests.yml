@@ -1,0 +1,40 @@
+name: logger
+
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - '.github/workflows/*'
+  pull_request:
+    paths-ignore:
+      - '.github/workflows/*'
+
+permissions:
+  checks: write
+  actions: read
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install make
+        run: sudo apt install make
+      - name: Install valgrind
+        run: sudo apt install valgrind
+      - name: Install cmake
+        run: sudo apt install cmake
+      - name: Install postgresql
+        run: sudo apt install postgresql
+      - name: Install gtest manually
+        run: sudo apt-get install libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/*.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
+      - uses: actions/checkout@v3
+      - name: build
+        run: mkdir build && cd build && cmake .. && make && cd test && make
+      - name: create file test.txt
+        run: echo "dbname=postgres user=postgres password=postgres host=localhost port=5432" > test.txt
+      - name: test of LogPostgresql
+        run: ./LPtests
+      - name: test of memory of LogPostgresql
+        run: valgrind --tool=memcheck --leak-check=full --undef-value-errors=no --error-exitcode=111 ./LPtests

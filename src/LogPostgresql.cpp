@@ -15,13 +15,13 @@ namespace LPG{
         return dt;
     }
 
-    Logger::Logger(const char* configFile): status_(Status_::NORMAL)
+    void Logger::connection__()
     {
         std::ifstream file;
-        file.open(configFile,std::ios_base::binary);
+        file.open(configFile_,std::ios_base::binary);
         if (!file.is_open())
         {
-            std::cerr << getDateTime__()<<" [ERROR] Can't open config file " << configFile << std::endl;
+            std::cerr << getDateTime__()<<" [ERROR] Can't open config file " << configFile_ << std::endl;
             status_ = Status_::ERROR;
             return;
         }
@@ -43,6 +43,12 @@ namespace LPG{
             status_ = Status_::ERROR;
             return;
         }
+    }
+
+    Logger::Logger(const char* configFile): status_(Status_::NORMAL), configFile_(configFile)
+    {
+        connection__();
+        if (status_ == Status_::ERROR) return;
         res_ = PQexec(conn_, "DO $$ BEGIN CREATE TYPE LogLevel AS ENUM ('DEBUG', 'INFO', 'WARNING', 'ERROR'); EXCEPTION WHEN duplicate_object THEN null; END $$;");
         if (PQresultStatus(res_) != PGRES_COMMAND_OK) {
             std::cerr <<getDateTime__()<<" [ERROR] Error of creating type: " << PQerrorMessage(conn_) << std::endl;
@@ -76,16 +82,13 @@ namespace LPG{
 
     Logger::Logger(const Logger& other)
     {
-        if (other.status_ == Status_::ERROR)
+        conn_=nullptr;
+        res_=nullptr;
+        status_=other.status_;
+        configFile_=other.configFile_;
+        if (status_ == Status_::NORMAL)
         {
-            status_ = Status_::ERROR;
-            conn_=nullptr;
-            res_=nullptr;
-        } else
-        {
-            status_=other.status_;
-            conn_=other.conn_;
-            res_=other.res_;
+            connection__();
         }
     }
 
