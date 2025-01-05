@@ -1,5 +1,14 @@
 name: logger
 
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - '.github/workflows/*'
+  pull_request:
+    paths-ignore:
+      - '.github/workflows/*'
+
 permissions:
   checks: write
   actions: read
