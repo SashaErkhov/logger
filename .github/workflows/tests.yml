@@ -17,7 +17,21 @@ permissions:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d testdb"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Install make
         run: sudo apt install make
@@ -25,16 +39,25 @@ jobs:
         run: sudo apt install valgrind
       - name: Install cmake
         run: sudo apt install cmake
-      - name: Install postgresql
-        run: sudo apt install postgresql
       - name: Install gtest manually
         run: sudo apt-get install libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/*.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
       - uses: actions/checkout@v3
       - name: build
         run: mkdir build && cd build && cmake .. && make && cd test && make
       - name: create file test.txt
-        run: cd build/test && echo "dbname=postgres user=postgres password= host=localhost port=5432" > test.txt
+        run: cd build/test && echo "dbname=testdb user=postgres password=postgres host=127.0.0.1 port=5432" > test.txt
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          for i in {1..10}; do
+            if pg_isready -h 127.0.0.1 -p 5432 -U postgres; then
+              echo "PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Waiting for PostgreSQL..."
+            sleep 5
+          done
+          exit 1
       - name: test of LogPostgresql
         run: cd build/test && ./tests
       - name: test of memory of LogPostgresql
-        run: valgrind --tool=memcheck --leak-check=full --undef-value-errors=no --error-exitcode=111 ./tests
+        run: cd build/test && valgrind --tool=memcheck --leak-check=full --undef-value-errors=no --error-exitcode=111 ./tests
