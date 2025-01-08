@@ -13,5 +13,9 @@ target_include_directories(LogPostgresql
         PUBLIC include
         PRIVATE src
 )
-set_target_properties(LogPostgresql PROPERTIES CXX_STANDARD 17)
+set_target_properties(LogPostgresql PROPERTIES
+        CXX_STANDARD 17
+        VERSION 1.0.0
+        SOVERSION 1
+)
 add_subdirectory(test)
