@@ -3,6 +3,9 @@
 
 #include <libpq-fe.h>
 #include <string>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 namespace LPG
 {
@@ -17,12 +20,13 @@ namespace LPG
     Status_ status_;
     PGconn *conn_;
     PGresult *res_;
-    std::string configFile_;
+    std::string strForConnection_;
 
     const char* getDateTime__() const;
     void swap__(Logger&);
     void connection__();
     void sendToDb__(const char*, const char*);
+    void parseConfig__(const char*);
   public:
     Logger(const char*);
     ~Logger();

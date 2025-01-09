@@ -17,26 +17,7 @@ namespace LPG{
 
     void Logger::connection__()
     {
-        std::ifstream file;
-        file.open(configFile_,std::ios_base::binary);
-        if (!file.is_open())
-        {
-            std::cerr << getDateTime__()<<" [ERROR] Can't open config file " << configFile_ << std::endl;
-            status_ = Status_::ERROR;
-            return;
-        }
-        char line[1024];
-        file.read(line, 1024);
-        for (size_t i=0;i<1024;++i)
-        {
-            if (line[i]=='p' and line[i+1]=='o' and line[i+2]=='r'
-                and line[i+3]=='t' and line[i+4]=='=')
-            {
-                line[i+9] = '\0';
-                break;
-            }
-        }
-        conn_ = PQconnectdb(line);
+        conn_ = PQconnectdb(strForConnection_.c_str());
         if (PQstatus(conn_) != CONNECTION_OK) {
             std::cerr << getDateTime__()<<" [ERROR] Can't connect to database: " << PQerrorMessage(conn_) << std::endl;
             PQfinish(conn_);
@@ -45,8 +26,28 @@ namespace LPG{
         }
     }
 
-    Logger::Logger(const char* configFile): status_(Status_::NORMAL), configFile_(configFile)
+    void Logger::parseConfig__(const char* configFile)
     {
+        std::ifstream file(configFile);
+        try{
+            json j = json::parse(file);
+            std::stringstream ss;
+            ss<<"dbname="<<j["dbname"].get<std::string>()<<" user="
+            <<j["user"].get<std::string>()<<"  password="<<j["password"].get<std::string>()
+            <<" host="<<j["host"].get<std::string>()<<" port="<<j["port"].get<std::string>();
+            strForConnection_=ss.str();
+        }catch (...)
+        {
+            std::cerr << getDateTime__()<<" [ERROR] Can't parse config file " << configFile << std::endl;
+            status_ = Status_::ERROR;
+            return;
+        }
+    }
+
+    Logger::Logger(const char* configFile): status_(Status_::NORMAL)
+    {
+        parseConfig__(configFile);
+        if (status_ == Status_::ERROR) return;
         connection__();
         if (status_ == Status_::ERROR) return;
         res_ = PQexec(conn_, "DO $$ BEGIN CREATE TYPE LogLevel AS ENUM ('DEBUG', 'INFO','NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'); EXCEPTION WHEN duplicate_object THEN null; END $$;");
@@ -85,7 +86,7 @@ namespace LPG{
         conn_=nullptr;
         res_=nullptr;
         status_=other.status_;
-        configFile_=other.configFile_;
+        strForConnection_=other.strForConnection_;
         if (status_ == Status_::NORMAL)
         {
             connection__();

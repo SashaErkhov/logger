@@ -23,5 +23,14 @@ include(GoogleTest)
 gtest_discover_tests(tests)
 include_directories(../include)
 include_directories(${POSTGRESQL_INCLUDE_DIR})
-target_link_libraries(GB PRIVATE pq stdc++)
-target_link_libraries(tests GTest::gtest_main pq stdc++)
+target_link_libraries(GB
+        PRIVATE pq
+        PRIVATE nlohmann_json::nlohmann_json
+        stdc++
+)
+target_link_libraries(tests
+        GTest::gtest_main
+        pq
+        nlohmann_json::nlohmann_json
+        stdc++
+)

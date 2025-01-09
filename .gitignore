@@ -34,3 +34,4 @@ cmake-build-debug
 test/test.txt
 .idea
 build
+test/test.json

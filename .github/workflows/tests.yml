@@ -44,8 +44,8 @@ jobs:
       - uses: actions/checkout@v3
       - name: build
         run: mkdir build && cd build && cmake .. && make && cd test && make
-      - name: create file test.txt
-        run: cd build/test && echo "dbname=testdb user=postgres password=postgres host=127.0.0.1 port=5432" > test.txt
+      - name: create file test.json
+        run: cd build/test && echo {\"dbname\": \"testlogger\", \"user\": \"postgres\", \"password\": \"710209\", \"host\": \"localhost\", \"port\": \"5432\"} > test.json
       - name: Wait for PostgreSQL to be ready
         run: |
           for i in {1..10}; do

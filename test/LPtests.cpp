@@ -7,25 +7,21 @@
 
 PGconn* connection()
 {
-    std::ifstream file;
-    file.open("test.txt",std::ios_base::binary);
-    if (!file.is_open())
+    std::ifstream file("test.json");
+    std::string strForConnection;
+    try{
+        json j = json::parse(file);
+        std::stringstream ss;
+        ss<<"dbname="<<j["dbname"].get<std::string>()<<" user="
+        <<j["user"].get<std::string>()<<"  password="<<j["password"].get<std::string>()
+        <<" host="<<j["host"].get<std::string>()<<" port="<<j["port"].get<std::string>();
+        strForConnection=ss.str();
+    }catch (...)
     {
-        std::cerr<<"Can't open file \"test.txt\""<<std::endl;
-        throw std::logic_error("Can't open file \"test.txt\"");
+        std::cerr << "Can't parse config file " << std::endl;
+        throw std::logic_error("Can't parse config file");
     }
-    char line[1024];
-    file.read(line,1024);
-    for (size_t i=0;i<1024;++i)
-    {
-        if (line[i]=='p' and line[i+1]=='o' and line[i+2]=='r'
-            and line[i+3]=='t' and line[i+4]=='=')
-        {
-            line[i+9] = '\0';
-            break;
-        }
-    }
-    PGconn *conn = PQconnectdb(line);
+    PGconn *conn = PQconnectdb(strForConnection.c_str());
     if (PQstatus(conn) != CONNECTION_OK) {
         std::cerr << "Can't connect to database: " << PQerrorMessage(conn) << std::endl;
         PQfinish(conn);
@@ -51,7 +47,7 @@ inline void dropTableDB()
 TEST(LogPostgresql, constructorAndLog)
 {
     dropTableDB();
-    LPG::Logger logger("test.txt");
+    LPG::Logger logger("test.json");
     logger.debug("test-debug");
     logger.info("test-info");
     logger.notice("test-notice");
@@ -114,7 +110,7 @@ TEST(LogPostgresql, constructorAndLog)
 TEST(LogPostgresql, constructorOfCopying)
 {
     dropTableDB();
-    LPG::Logger logger("test.txt");
+    LPG::Logger logger("test.json");
     LPG::Logger logger2(logger);
     logger.debug("test-debug");
     logger.info("test-info");
@@ -177,7 +173,7 @@ TEST(LogPostgresql, constructorOfCopying)
 TEST(LogPostgresql, eqOfCopying)
 {
     dropTableDB();
-    LPG::Logger logger("test.txt");
+    LPG::Logger logger("test.json");
     LPG::Logger logger2 = logger;
     logger.debug("test-debug");
     logger.info("test-info");
@@ -240,7 +236,7 @@ TEST(LogPostgresql, eqOfCopying)
 TEST(LogPostgresql, constructorOfMoving)
 {
     dropTableDB();
-    LPG::Logger logger("test.txt");
+    LPG::Logger logger("test.json");
     LPG::Logger logger2(std::move(logger));
     logger.debug("test-debug");
     logger.info("test-info");
@@ -287,7 +283,7 @@ TEST(LogPostgresql, constructorOfMoving)
 TEST(LogPostgresql, eqOfMoving)
 {
     dropTableDB();
-    LPG::Logger logger("test.txt");
+    LPG::Logger logger("test.json");
     LPG::Logger logger2=std::move(logger);
     logger.debug("test-debug");
     logger.info("test-info");
