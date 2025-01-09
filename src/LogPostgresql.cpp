@@ -49,7 +49,7 @@ namespace LPG{
     {
         connection__();
         if (status_ == Status_::ERROR) return;
-        res_ = PQexec(conn_, "DO $$ BEGIN CREATE TYPE LogLevel AS ENUM ('DEBUG', 'INFO', 'WARNING', 'ERROR'); EXCEPTION WHEN duplicate_object THEN null; END $$;");
+        res_ = PQexec(conn_, "DO $$ BEGIN CREATE TYPE LogLevel AS ENUM ('DEBUG', 'INFO','NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'); EXCEPTION WHEN duplicate_object THEN null; END $$;");
         if (PQresultStatus(res_) != PGRES_COMMAND_OK) {
             std::cerr <<getDateTime__()<<" [ERROR] Error of creating type: " << PQerrorMessage(conn_) << std::endl;
             PQclear(res_);
@@ -137,23 +137,11 @@ namespace LPG{
         return *this;
     }
 
-    void Logger::log(LogLevel level, const char* message)
+
+    void Logger::sendToDb__(const char* logLevel, const char* message)
     {
-        if (status_ == Status_::ERROR)
-        {
-            std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
-            return;
-        }
-        const char* level_str = getLevelString__(level);
-        if (level==LogLevel::ERROR)
-        {
-            std::cerr << getDateTime__()<<" [ERROR] " << message << std::endl;
-        } else
-        {
-            std::cout << getDateTime__()<<" [" << level_str << "] " << message << std::endl;
-        }
         std::stringstream ss;
-        ss<<"INSERT INTO Logs (dateTime, level, message) VALUES (now(), '"<<level_str<<"', '"<<message<<"');";
+        ss<<"INSERT INTO Logs (dateTime, level, message) VALUES (now(), '"<<logLevel<<"', '"<<message<<"');";
         res_=PQexec(conn_, ss.str().c_str());
         if (PQresultStatus(res_) != PGRES_COMMAND_OK)
         {
@@ -166,21 +154,93 @@ namespace LPG{
         PQclear(res_);
     }
 
-    const char* Logger::getLevelString__(LogLevel level) const
+
+    void Logger::debug(const char* message)
     {
-        switch (level)
+        if (status_ == Status_::ERROR)
         {
-            case LogLevel::DEBUG:
-                return "DEBUG";
-            case LogLevel::INFO:
-                return "INFO";
-            case LogLevel::WARNING:
-                return "WARNING";
-            case LogLevel::ERROR:
-                return "ERROR";
-            default:
-                return "ERROR";
+            std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
+            return;
         }
+        std::cout << getDateTime__()<<" [DEBUG] " << message << std::endl;
+        sendToDb__("DEBUG", message);
+    }
+
+    void Logger::info(const char* message)
+    {
+        if (status_ == Status_::ERROR)
+        {
+            std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
+            return;
+        }
+        std::cout << getDateTime__()<<" [INFO] " << message << std::endl;
+        sendToDb__("INFO", message);
+    }
+
+    void Logger::notice(const char* message)
+    {
+        if (status_ == Status_::ERROR)
+        {
+            std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
+            return;
+        }
+        std::cout << getDateTime__()<<" [NOTICE] " << message << std::endl;
+        sendToDb__("NOTICE", message);
+    }
+
+    void Logger::warning(const char* message)
+    {
+        if (status_ == Status_::ERROR)
+        {
+            std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
+            return;
+        }
+        std::cerr << getDateTime__()<<" [WARNING] " << message << std::endl;
+        sendToDb__("WARNING", message);
+    }
+
+    void Logger::error(const char* message)
+    {
+        if (status_ == Status_::ERROR)
+        {
+            std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
+            return;
+        }
+        std::cerr << getDateTime__()<<" [ERROR] " << message << std::endl;
+        sendToDb__("ERROR", message);
+    }
+
+    void Logger::critical(const char* message)
+    {
+        if (status_ == Status_::ERROR)
+        {
+            std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
+            return;
+        }
+        std::cerr << getDateTime__()<<" [CRITICAL] " << message << std::endl;
+        sendToDb__("CRITICAL", message);
+    }
+
+    void Logger::alert(const char* message)
+    {
+        if (status_ == Status_::ERROR)
+        {
+            std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
+            return;
+        }
+        std::cerr << getDateTime__()<<" [ALERT] " << message << std::endl;
+        sendToDb__("ALERT", message);
+    }
+
+    void Logger::emergency(const char* message)
+    {
+        if (status_ == Status_::ERROR)
+        {
+            std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
+            return;
+        }
+        std::cerr << getDateTime__()<<" [EMERGENCY] " << message << std::endl;
+        sendToDb__("EMERGENCY", message);
     }
 }
 //hehe
