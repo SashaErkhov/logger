@@ -3,11 +3,7 @@ name: logger
 on:
   workflow_dispatch:
   push:
-    paths-ignore:
-      - '.github/workflows/*'
   pull_request:
-    paths-ignore:
-      - '.github/workflows/*'
 
 permissions:
   checks: write
@@ -45,7 +41,9 @@ jobs:
       - name: build
         run: mkdir build && cd build && cmake .. && make && cd test && make
       - name: create file test.json
-        run: cd build/test && echo {\"dbname\": \"testlogger\", \"user\": \"postgres\", \"password\": \"710209\", \"host\": \"localhost\", \"port\": \"5432\"} > test.json
+        run: |
+          cd build/test
+          echo {\"dbname\": \"testlogger\", \"user\": \"postgres\", \"password\": \"710209\", \"host\": \"localhost\", \"port\": \"5432\"} > test.json
       - name: Wait for PostgreSQL to be ready
         run: |
           for i in {1..10}; do
