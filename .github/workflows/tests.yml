@@ -43,7 +43,7 @@ jobs:
       - name: create file test.json
         run: |
           cd build/test
-          echo {\"dbname\": \"testlogger\", \"user\": \"postgres\", \"password\": \"710209\", \"host\": \"localhost\", \"port\": \"5432\"} > test.json
+          echo {\"dbname\": \"testdb\", \"user\": \"postgres\", \"password\": \"postgres\", \"host\": \"localhost\", \"port\": \"5432\"} > test.json
       - name: Wait for PostgreSQL to be ready
         run: |
           for i in {1..10}; do
