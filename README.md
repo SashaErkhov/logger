@@ -35,16 +35,19 @@ sudo find / -name libpq-fe.h
 ## How to use
 Вот небольшой, но всеобъемлющий примерчик
 ```c++
-#include <iostream>
 #include <LogPostgresql.h>
 
 int main()
 {
     LPG::Logger logger("config.txt");
-    logger.log(LPG::LogLevel::DEBUG, "test-debug");
-    logger.log(LPG::LogLevel::INFO, "test-info");
-    logger.log(LPG::LogLevel::WARNING, "test-warning");
-    logger.log(LPG::LogLevel::ERROR, "test-error");
+    logger.debug("test-debug");
+    logger.info("test-info");
+    logger.notice("test-notice");
+    logger.warning("test-warning");
+    logger.error("test-error");
+    logger.critical("test-critical");
+    logger.alert("test-alert");
+    logger.emergency("test-emergency");
     return 0;
 }
 ```
@@ -53,4 +56,4 @@ config.txt - это конфиг файл вида:
 dbname=<> user=<> password=<> host=<> port=<>
 ```
 Вместо <> подставьте своё  
-Всего 4 уровня логирования: DEBUG, INFO, WARNING, ERROR
+Всего 8 уровня логирования: DEBUG, INFO, NOTICE, WARNING, ERROR, CRITICAL, ALERT, EMERGENCY

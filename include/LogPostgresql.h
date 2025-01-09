@@ -6,15 +6,6 @@
 
 namespace LPG
 {
-
-  enum class LogLevel
-  {
-    DEBUG,
-    INFO,
-    WARNING,
-    ERROR
-  };
-
   class Logger
   {
     enum class Status_
@@ -30,8 +21,8 @@ namespace LPG
 
     const char* getDateTime__() const;
     void swap__(Logger&);
-    const char* getLevelString__(LogLevel) const;
     void connection__();
+    void sendToDb__(const char*, const char*);
   public:
     Logger(const char*);
     ~Logger();
@@ -40,8 +31,14 @@ namespace LPG
     Logger(Logger&&);
     Logger& operator=(Logger&&);
 
-    void log(LogLevel, const char*);
-
+    void debug(const char*);
+    void info(const char*);
+    void notice(const char*);
+    void warning(const char*);
+    void error(const char*);
+    void critical(const char*);
+    void alert(const char*);
+    void emergency(const char*);
   };
 
 }

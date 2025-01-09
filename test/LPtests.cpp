@@ -52,10 +52,14 @@ TEST(LogPostgresql, constructorAndLog)
 {
     dropTableDB();
     LPG::Logger logger("test.txt");
-    logger.log(LPG::LogLevel::DEBUG,"test-debug");
-    logger.log(LPG::LogLevel::INFO,"test-info");
-    logger.log(LPG::LogLevel::WARNING,"test-warning");
-    logger.log(LPG::LogLevel::ERROR,"test-error");
+    logger.debug("test-debug");
+    logger.info("test-info");
+    logger.notice("test-notice");
+    logger.warning("test-warning");
+    logger.error("test-error");
+    logger.critical("test-critical");
+    logger.alert("test-alert");
+    logger.emergency("test-emergency");
     PGconn *conn = connection();
     PGresult *res = PQexec(conn,"SELECT * FROM logs");
     if (PQresultStatus(res) != PGRES_TUPLES_OK)
@@ -66,25 +70,42 @@ TEST(LogPostgresql, constructorAndLog)
         throw std::logic_error("Error of selecting from table");
     }
     int nrows = PQntuples(res);
-    EXPECT_EQ(nrows,4);
+    EXPECT_EQ(nrows,8);
 
     std::string logLevel=PQgetvalue(res,0,1);
     EXPECT_EQ(logLevel,"DEBUG");
     logLevel=PQgetvalue(res,1,1);
     EXPECT_EQ(logLevel,"INFO");
     logLevel=PQgetvalue(res,2,1);
-    EXPECT_EQ(logLevel,"WARNING");
+    EXPECT_EQ(logLevel,"NOTICE");
     logLevel=PQgetvalue(res,3,1);
+    EXPECT_EQ(logLevel,"WARNING");
+    logLevel=PQgetvalue(res,4,1);
     EXPECT_EQ(logLevel,"ERROR");
+    logLevel=PQgetvalue(res,5,1);
+    EXPECT_EQ(logLevel,"CRITICAL");
+    logLevel=PQgetvalue(res,6,1);
+    EXPECT_EQ(logLevel,"ALERT");
+    logLevel=PQgetvalue(res,7,1);
+    EXPECT_EQ(logLevel,"EMERGENCY");
+
 
     std::string message=PQgetvalue(res,0,2);
     EXPECT_EQ(message,"test-debug");
     message=PQgetvalue(res,1,2);
     EXPECT_EQ(message,"test-info");
     message=PQgetvalue(res,2,2);
-    EXPECT_EQ(message,"test-warning");
+    EXPECT_EQ(message,"test-notice");
     message=PQgetvalue(res,3,2);
+    EXPECT_EQ(message,"test-warning");
+    message=PQgetvalue(res,4,2);
     EXPECT_EQ(message,"test-error");
+    message=PQgetvalue(res,5,2);
+    EXPECT_EQ(message,"test-critical");
+    message=PQgetvalue(res,6,2);
+    EXPECT_EQ(message,"test-alert");
+    message=PQgetvalue(res,7,2);
+    EXPECT_EQ(message,"test-emergency");
 
     PQclear(res);
     PQfinish(conn);
@@ -95,14 +116,14 @@ TEST(LogPostgresql, constructorOfCopying)
     dropTableDB();
     LPG::Logger logger("test.txt");
     LPG::Logger logger2(logger);
-    logger.log(LPG::LogLevel::DEBUG,"test-debug");
-    logger.log(LPG::LogLevel::INFO,"test-info");
-    logger.log(LPG::LogLevel::WARNING,"test-warning");
-    logger.log(LPG::LogLevel::ERROR,"test-error");
-    logger2.log(LPG::LogLevel::DEBUG,"test-debug");
-    logger2.log(LPG::LogLevel::INFO,"test-info");
-    logger2.log(LPG::LogLevel::WARNING,"test-warning");
-    logger2.log(LPG::LogLevel::ERROR,"test-error");
+    logger.debug("test-debug");
+    logger.info("test-info");
+    logger.warning("test-warning");
+    logger.error("test-error");
+    logger2.debug("test-debug");
+    logger2.info("test-info");
+    logger2.warning("test-warning");
+    logger2.error("test-error");
     PGconn *conn = connection();
     PGresult *res = PQexec(conn,"SELECT * FROM logs");
     if (PQresultStatus(res) != PGRES_TUPLES_OK)
@@ -158,14 +179,14 @@ TEST(LogPostgresql, eqOfCopying)
     dropTableDB();
     LPG::Logger logger("test.txt");
     LPG::Logger logger2 = logger;
-    logger.log(LPG::LogLevel::DEBUG,"test-debug");
-    logger.log(LPG::LogLevel::INFO,"test-info");
-    logger.log(LPG::LogLevel::WARNING,"test-warning");
-    logger.log(LPG::LogLevel::ERROR,"test-error");
-    logger2.log(LPG::LogLevel::DEBUG,"test-debug");
-    logger2.log(LPG::LogLevel::INFO,"test-info");
-    logger2.log(LPG::LogLevel::WARNING,"test-warning");
-    logger2.log(LPG::LogLevel::ERROR,"test-error");
+    logger.debug("test-debug");
+    logger.info("test-info");
+    logger.warning("test-warning");
+    logger.error("test-error");
+    logger2.debug("test-debug");
+    logger2.info("test-info");
+    logger2.warning("test-warning");
+    logger2.error("test-error");
     PGconn *conn = connection();
     PGresult *res = PQexec(conn,"SELECT * FROM logs");
     if (PQresultStatus(res) != PGRES_TUPLES_OK)
@@ -221,14 +242,14 @@ TEST(LogPostgresql, constructorOfMoving)
     dropTableDB();
     LPG::Logger logger("test.txt");
     LPG::Logger logger2(std::move(logger));
-    logger.log(LPG::LogLevel::DEBUG,"test-debug");
-    logger.log(LPG::LogLevel::INFO,"test-info");
-    logger.log(LPG::LogLevel::WARNING,"test-warning");
-    logger.log(LPG::LogLevel::ERROR,"test-error");
-    logger2.log(LPG::LogLevel::DEBUG,"test-debug");
-    logger2.log(LPG::LogLevel::INFO,"test-info");
-    logger2.log(LPG::LogLevel::WARNING,"test-warning");
-    logger2.log(LPG::LogLevel::ERROR,"test-error");
+    logger.debug("test-debug");
+    logger.info("test-info");
+    logger.warning("test-warning");
+    logger.error("test-error");
+    logger2.debug("test-debug");
+    logger2.info("test-info");
+    logger2.warning("test-warning");
+    logger2.error("test-error");
     PGconn *conn = connection();
     PGresult *res = PQexec(conn,"SELECT * FROM logs");
     if (PQresultStatus(res) != PGRES_TUPLES_OK)
@@ -268,14 +289,14 @@ TEST(LogPostgresql, eqOfMoving)
     dropTableDB();
     LPG::Logger logger("test.txt");
     LPG::Logger logger2=std::move(logger);
-    logger.log(LPG::LogLevel::DEBUG,"test-debug");
-    logger.log(LPG::LogLevel::INFO,"test-info");
-    logger.log(LPG::LogLevel::WARNING,"test-warning");
-    logger.log(LPG::LogLevel::ERROR,"test-error");
-    logger2.log(LPG::LogLevel::DEBUG,"test-debug");
-    logger2.log(LPG::LogLevel::INFO,"test-info");
-    logger2.log(LPG::LogLevel::WARNING,"test-warning");
-    logger2.log(LPG::LogLevel::ERROR,"test-error");
+    logger.debug("test-debug");
+    logger.info("test-info");
+    logger.warning("test-warning");
+    logger.error("test-error");
+    logger2.debug("test-debug");
+    logger2.info("test-info");
+    logger2.warning("test-warning");
+    logger2.error("test-error");
     PGconn *conn = connection();
     PGresult *res = PQexec(conn,"SELECT * FROM logs");
     if (PQresultStatus(res) != PGRES_TUPLES_OK)
@@ -324,10 +345,10 @@ TEST(LogPostgresql, noExistFile)
         throw std::logic_error("Error of creating table");
     }
     PQclear(res);
-    logger.log(LPG::LogLevel::DEBUG,"test-debug");
-    logger.log(LPG::LogLevel::INFO,"test-info");
-    logger.log(LPG::LogLevel::WARNING,"test-warning");
-    logger.log(LPG::LogLevel::ERROR,"test-error");
+    logger.debug("test-debug");
+    logger.info("test-info");
+    logger.warning("test-warning");
+    logger.error("test-error");
     res = PQexec(conn,"SELECT * FROM logs");
     if (PQresultStatus(res) != PGRES_TUPLES_OK)
     {
