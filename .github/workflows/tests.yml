@@ -3,9 +3,13 @@ name: logger
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths-ignore:
       - '.github/workflows/*'
   pull_request:
+    branches:
+      - main
     paths-ignore:
       - '.github/workflows/*'
 
