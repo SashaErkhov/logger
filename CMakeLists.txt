@@ -15,7 +15,7 @@ target_include_directories(LogPostgresql
 )
 set_target_properties(LogPostgresql PROPERTIES
         CXX_STANDARD 17
-        VERSION 1.0.1
+        VERSION 1.0.2
         SOVERSION 1
 )
 add_subdirectory(test)
