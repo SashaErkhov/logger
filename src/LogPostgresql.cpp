@@ -21,7 +21,7 @@ namespace LPG{
         }
     }
 
-    void Logger::parseConfig__(const char* configFile)
+    void Logger::parseConfig__(const char* configFile)// TODO
     {
         try{
             auto config = toml::parse_file(configFile);
@@ -32,6 +32,10 @@ namespace LPG{
             <<" host="<<config["database"]["host"].value_or("localhost")
             <<" port="<<config["database"]["port"].value_or("5432");
             strForConnection_=ss.str();
+            nameOfApplication_ = config["meta"]["name_of_application"].value_or("LogPostgresql");
+            waysToSave_[0] = config["ways_to_save"]["savingToConsole"].value_or(false);
+            waysToSave_[1] = config["ways_to_save"]["savingToDatabase"].value_or(false);
+            waysToSave_[2] = config["ways_to_save"]["savingToSystem"].value_or(false);
         }catch (...)
         {
             std::cerr << getDateTime__()<<" [ERROR] Can't parse config file " << configFile << std::endl;
@@ -40,31 +44,44 @@ namespace LPG{
         }
     }
 
-    Logger::Logger(const char* configFile): status_(Status_::NORMAL)
+    Logger::Logger()
+    {
+        status_ = Status_::ERROR;
+        conn_=nullptr;
+        res_=nullptr;
+        strForConnection_="";
+        waysToSave_ = 0;
+        nameOfApplication_ = "LogPostgresql";
+    }
+
+    Logger::Logger(const char* configFile): status_(Status_::NORMAL), conn_(nullptr), res_(nullptr), strForConnection_("")
     {
         parseConfig__(configFile);
         if (status_ == Status_::ERROR) return;
-        connection__();
-        if (status_ == Status_::ERROR) return;
-        res_ = PQexec(conn_, "DO $$ BEGIN CREATE TYPE LogLevel AS ENUM ('DEBUG', 'INFO','NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'); EXCEPTION WHEN duplicate_object THEN null; END $$;");
-        if (PQresultStatus(res_) != PGRES_COMMAND_OK) {
-            std::cerr <<getDateTime__()<<" [ERROR] Error of creating type: " << PQerrorMessage(conn_) << std::endl;
+        if (waysToSave_[1])
+        {
+            connection__();
+            if (status_ == Status_::ERROR) return;
+            res_ = PQexec(conn_, "DO $$ BEGIN CREATE TYPE LogLevel AS ENUM ('DEBUG', 'INFO','NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'); EXCEPTION WHEN duplicate_object THEN null; END $$;");
+            if (PQresultStatus(res_) != PGRES_COMMAND_OK) {
+                std::cerr <<getDateTime__()<<" [ERROR] Error of creating type: " << PQerrorMessage(conn_) << std::endl;
+                PQclear(res_);
+                PQfinish(conn_);
+                status_ = Status_::ERROR;
+                return;
+            }
             PQclear(res_);
-            PQfinish(conn_);
-            status_ = Status_::ERROR;
-            return;
-        }
-        PQclear(res_);
-        res_ =
-            PQexec(conn_, "CREATE TABLE IF NOT EXISTS Logs (dateTime TIMESTAMP DEFAULT now(), level LogLevel, message TEXT);");
-        if (PQresultStatus(res_) != PGRES_COMMAND_OK) {
-            std::cerr <<getDateTime__()<<" [ERROR] Error of creating table: " << PQerrorMessage(conn_) << std::endl;
+            res_ =
+                PQexec(conn_, "CREATE TABLE IF NOT EXISTS Logs (dateTime TIMESTAMP DEFAULT now(), level LogLevel,nameApp TEXT DEFAULT 'LogPostgresql', message TEXT);");
+            if (PQresultStatus(res_) != PGRES_COMMAND_OK) {
+                std::cerr <<getDateTime__()<<" [ERROR] Error of creating table: " << PQerrorMessage(conn_) << std::endl;
+                PQclear(res_);
+                PQfinish(conn_);
+                status_ = Status_::ERROR;
+                return;
+            }
             PQclear(res_);
-            PQfinish(conn_);
-            status_ = Status_::ERROR;
-            return;
         }
-        PQclear(res_);
     }
 
     Logger::~Logger()
@@ -83,6 +100,8 @@ namespace LPG{
         res_=nullptr;
         status_=other.status_;
         strForConnection_=other.strForConnection_;
+        waysToSave_ = other.waysToSave_;
+        nameOfApplication_ = other.nameOfApplication_;
         if (status_ == Status_::NORMAL)
         {
             connection__();
@@ -94,6 +113,9 @@ namespace LPG{
         std::swap(conn_,other.conn_);
         std::swap(res_,other.res_);
         std::swap(status_,other.status_);
+        std::swap(strForConnection_, other.strForConnection_);
+        std::swap(waysToSave_, other.waysToSave_);
+        std::swap(nameOfApplication_, other.nameOfApplication_);
     }
 
     Logger& Logger::operator=(const Logger& other)
@@ -106,20 +128,9 @@ namespace LPG{
         return *this;
     }
 
-    Logger::Logger(Logger&& other)
+    Logger::Logger(Logger&& other): Logger()
     {
-        if (other.status_ == Status_::ERROR)
-        {
-            status_ = Status_::ERROR;
-            conn_=other.conn_=nullptr;
-            res_=other.res_=nullptr;
-        } else
-        {
-            swap__(other);
-            // other.status_=Status_::ERROR;
-            // other.conn_=nullptr;
-            // other.res_=nullptr;
-        }
+        swap__(other);
     }
 
     Logger& Logger::operator=(Logger&& other)
@@ -127,18 +138,15 @@ namespace LPG{
         if (this != &other)
         {
             swap__(other);
-            // other.status_=Status_::ERROR;
-            // other.conn_=nullptr;
-            // other.res_=nullptr;
         }
         return *this;
     }
 
 
-    void Logger::sendToDb__(const char* logLevel, const char* message)
+    void Logger::sendToDatabase__(const char* logLevel, const char* message)
     {
         std::stringstream ss;
-        ss<<"INSERT INTO Logs (dateTime, level, message) VALUES (now(), '"<<logLevel<<"', '"<<message<<"');";
+        ss<<"INSERT INTO Logs (dateTime, level,nameApp, message) VALUES (now(), '"<<logLevel<<"','"<<nameOfApplication_<<"','"<<message<<"');";
         res_=PQexec(conn_, ss.str().c_str());
         if (PQresultStatus(res_) != PGRES_COMMAND_OK)
         {
@@ -151,6 +159,62 @@ namespace LPG{
         PQclear(res_);
     }
 
+    void Logger::sendToConsoleOutput__(const char* logLevel, const char* message)
+    {
+        std::cout << getDateTime__()<<" [" << logLevel << "] - "<< nameOfApplication_ << ": " << message << std::endl;
+    }
+
+    void Logger::sendToConsoleError__(const char* logLevel, const char* message)
+    {
+        std::cerr << getDateTime__()<<" [" << logLevel << "] - "<< nameOfApplication_ << ": " << message << std::endl;
+    }
+
+// TODO I don't know how to do it better
+#ifdef _WIN32
+#include <windows.h>
+    
+    void Logger::sendToSystem__(const char* logLevel, const char* message)
+    {
+        HANDLE hEventSource = RegisterEventSource(NULL, "LogPostgresql");
+        if (!hEventSource) return;
+
+        WORD wType;
+        if (strcmp(logLevel, "DEBUG") == 0) wType = EVENTLOG_INFORMATION_TYPE;
+        else if (strcmp(logLevel, "INFO") == 0) wType = EVENTLOG_INFORMATION_TYPE;
+        else if (strcmp(logLevel, "NOTICE") == 0) wType = EVENTLOG_INFORMATION_TYPE;
+        else if (strcmp(logLevel, "WARNING") == 0) wType = EVENTLOG_WARNING_TYPE;
+        else wType = EVENTLOG_ERROR_TYPE;
+
+        LPCSTR strings[1] = { (nameOfApplication_ + ": " + message) };
+        ReportEvent(hEventSource, wType, 0, 0, NULL, 1, 0, strings, NULL);
+        DeregisterEventSource(hEventSource);
+    }
+#elif defined(__linux__) || defined(__APPLE__)
+#include <syslog.h>
+
+    void Logger::sendToSystem__(const char* logLevel, const char* message)
+    {
+        int priority;
+        if (strcmp(logLevel, "DEBUG") == 0) priority = LOG_DEBUG;
+        if (strcmp(logLevel, "INFO") == 0) priority = LOG_INFO;
+        if (strcmp(logLevel, "NOTICE") == 0) priority = LOG_NOTICE;
+        if (strcmp(logLevel, "WARNING") == 0) priority = LOG_WARNING;
+        if (strcmp(logLevel, "ERROR") == 0) priority = LOG_ERR;
+        if (strcmp(logLevel, "CRITICAL") == 0) priority = LOG_CRIT;
+        if (strcmp(logLevel, "ALERT") == 0) priority = LOG_ALERT;
+        if (strcmp(logLevel, "EMERGENCY") == 0) priority = LOG_EMERG;
+
+        openlog(nameOfApplication_.c_str(), LOG_PID | LOG_CONS, LOG_USER);
+        syslog(priority, "%s", message);
+        closelog();
+    }
+#else
+    void Logger::sendToSystem__(const char* logLevel, const char* message)
+    {
+        return;
+    }
+#endif
+
     void Logger::debug(const char* message)
     {
         if (status_ == Status_::ERROR)
@@ -158,8 +222,9 @@ namespace LPG{
             std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
             return;
         }
-        std::cout << getDateTime__()<<" [DEBUG] " << message << std::endl;
-        sendToDb__("DEBUG", message);
+        if (waysToSave_[0]) sendToConsoleOutput__("DEBUG", message);
+        if (waysToSave_[1]) sendToDatabase__("DEBUG", message);
+        if (waysToSave_[2]) sendToSystem__("DEBUG", message);
     }
 
     void Logger::info(const char* message)
@@ -169,8 +234,9 @@ namespace LPG{
             std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
             return;
         }
-        std::cout << getDateTime__()<<" [INFO] " << message << std::endl;
-        sendToDb__("INFO", message);
+        if (waysToSave_[0]) sendToConsoleOutput__("INFO", message);
+        if (waysToSave_[1]) sendToDatabase__("INFO", message);
+        if (waysToSave_[2]) sendToSystem__("INFO", message);
     }
 
     void Logger::notice(const char* message)
@@ -180,8 +246,9 @@ namespace LPG{
             std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
             return;
         }
-        std::cout << getDateTime__()<<" [NOTICE] " << message << std::endl;
-        sendToDb__("NOTICE", message);
+        if (waysToSave_[0]) sendToConsoleOutput__("NOTICE", message);
+        if (waysToSave_[1]) sendToDatabase__("NOTICE", message);
+        if (waysToSave_[2]) sendToSystem__("NOTICE", message);
     }
 
     void Logger::warning(const char* message)
@@ -191,8 +258,9 @@ namespace LPG{
             std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
             return;
         }
-        std::cerr << getDateTime__()<<" [WARNING] " << message << std::endl;
-        sendToDb__("WARNING", message);
+        if (waysToSave_[0]) sendToConsoleOutput__("WARNING", message);
+        if (waysToSave_[1]) sendToDatabase__("WARNING", message);
+        if (waysToSave_[2]) sendToSystem__("WARNING", message);
     }
 
     void Logger::error(const char* message)
@@ -202,8 +270,9 @@ namespace LPG{
             std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
             return;
         }
-        std::cerr << getDateTime__()<<" [ERROR] " << message << std::endl;
-        sendToDb__("ERROR", message);
+        if (waysToSave_[0]) sendToConsoleError__("ERROR", message);
+        if (waysToSave_[1]) sendToDatabase__("ERROR", message);
+        if (waysToSave_[2]) sendToSystem__("ERROR", message);
     }
 
     void Logger::critical(const char* message)
@@ -213,8 +282,9 @@ namespace LPG{
             std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
             return;
         }
-        std::cerr << getDateTime__()<<" [CRITICAL] " << message << std::endl;
-        sendToDb__("CRITICAL", message);
+        if (waysToSave_[0]) sendToConsoleError__("CRITICAL", message);
+        if (waysToSave_[1]) sendToDatabase__("CRITICAL", message);
+        if (waysToSave_[2]) sendToSystem__("CRITICAL", message);
     }
 
     void Logger::alert(const char* message)
@@ -224,8 +294,9 @@ namespace LPG{
             std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
             return;
         }
-        std::cerr << getDateTime__()<<" [ALERT] " << message << std::endl;
-        sendToDb__("ALERT", message);
+        if (waysToSave_[0]) sendToConsoleError__("ALERT", message);
+        if (waysToSave_[1]) sendToDatabase__("ALERT", message);
+        if (waysToSave_[2]) sendToSystem__("ALERT", message);
     }
 
     void Logger::emergency(const char* message)
@@ -235,7 +306,8 @@ namespace LPG{
             std::cerr << getDateTime__()<<" [ERROR] Some problem in the past - logger" << std::endl;
             return;
         }
-        std::cerr << getDateTime__()<<" [EMERGENCY] " << message << std::endl;
-        sendToDb__("EMERGENCY", message);
+        if (waysToSave_[0]) sendToConsoleError__("EMERGENCY", message);
+        if (waysToSave_[1]) sendToDatabase__("EMERGENCY", message);
+        if (waysToSave_[2]) sendToSystem__("EMERGENCY", message);
     }
 }
