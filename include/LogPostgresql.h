@@ -3,18 +3,20 @@
 
 #include <libpq-fe.h>
 #include <string>
-#include <nlohmann/json.hpp>
-
-using json = nlohmann::json;
+#include <toml++/toml.hpp>
+#include <cstdint>
+#include <iostream>
+#include <ctime>
+#include <sstream>
 
 namespace LPG
 {
   class Logger
   {
-    enum class Status_
+    enum class Status_: std::uint8_t
     {
-      NORMAL,
-      ERROR
+      NORMAL = 0,
+      ERROR = 1
     };
 
     Status_ status_;

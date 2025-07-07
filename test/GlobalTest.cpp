@@ -1,12 +1,9 @@
 #include "LogPostgresql.h"
-#include <nlohmann/json.hpp>
-
-using json = nlohmann::json;
 
 using namespace LPG;
 
 int main(){
-  Logger logger("test.json");
+  Logger logger("test.toml");
   logger.debug("test-debug");
   logger.info("test-info");
   logger.notice("test-notice");

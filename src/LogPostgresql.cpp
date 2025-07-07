@@ -1,9 +1,4 @@
 #include "LogPostgresql.h"
-#include <fstream>
-#include <iostream>
-#include <ctime>
-#include <libpq-fe.h>
-#include <sstream>
 
 namespace LPG{
 
@@ -28,13 +23,14 @@ namespace LPG{
 
     void Logger::parseConfig__(const char* configFile)
     {
-        std::ifstream file(configFile);
         try{
-            json j = json::parse(file);
+            auto config = toml::parse_file(configFile);
             std::stringstream ss;
-            ss<<"dbname="<<j["dbname"].get<std::string>()<<" user="
-            <<j["user"].get<std::string>()<<"  password="<<j["password"].get<std::string>()
-            <<" host="<<j["host"].get<std::string>()<<" port="<<j["port"].get<std::string>();
+            ss<<"dbname="<<config["database"]["dbname"].value_or("postgres")
+            <<" user="<<config["database"]["user"].value_or("postgres")
+            <<"  password="<<config["database"]["password"].value_or("postgres")
+            <<" host="<<config["database"]["host"].value_or("localhost")
+            <<" port="<<config["database"]["port"].value_or("5432");
             strForConnection_=ss.str();
         }catch (...)
         {
@@ -120,9 +116,9 @@ namespace LPG{
         } else
         {
             swap__(other);
-            other.status_=Status_::ERROR;
-            other.conn_=nullptr;
-            other.res_=nullptr;
+            // other.status_=Status_::ERROR;
+            // other.conn_=nullptr;
+            // other.res_=nullptr;
         }
     }
 
@@ -131,9 +127,9 @@ namespace LPG{
         if (this != &other)
         {
             swap__(other);
-            other.status_=Status_::ERROR;
-            other.conn_=nullptr;
-            other.res_=nullptr;
+            // other.status_=Status_::ERROR;
+            // other.conn_=nullptr;
+            // other.res_=nullptr;
         }
         return *this;
     }
@@ -154,7 +150,6 @@ namespace LPG{
         }
         PQclear(res_);
     }
-
 
     void Logger::debug(const char* message)
     {
@@ -244,4 +239,3 @@ namespace LPG{
         sendToDb__("EMERGENCY", message);
     }
 }
-//hehe

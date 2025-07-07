@@ -25,12 +25,12 @@ include_directories(../include)
 include_directories(${POSTGRESQL_INCLUDE_DIR})
 target_link_libraries(GB
         PRIVATE pq
-        PRIVATE nlohmann_json::nlohmann_json
+        PRIVATE tomlplusplus::tomlplusplus
         stdc++
 )
 target_link_libraries(tests
         GTest::gtest_main
         pq
-        nlohmann_json::nlohmann_json
+        tomlplusplus::tomlplusplus
         stdc++
 )

@@ -5,12 +5,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(FetchContent)
 
 FetchContent_Declare(
-        json
-        GIT_REPOSITORY https://github.com/nlohmann/json
-        GIT_TAG v3.11.3
-        #URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+        tomlplusplus
+        GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
+        GIT_TAG v3.4.0 # или последняя
 )
-FetchContent_MakeAvailable(json)
+FetchContent_MakeAvailable(tomlplusplus)
 add_library(LogPostgresql STATIC
         src/LogPostgresql.cpp
 )
@@ -19,7 +18,7 @@ include_directories(${POSTGRESQL_INCLUDE_DIR})
 include_directories(include)
 target_link_libraries(LogPostgresql
         PRIVATE pq
-        PRIVATE nlohmann_json::nlohmann_json
+        PRIVATE tomlplusplus::tomlplusplus
         stdc++)
 target_include_directories(LogPostgresql
         PUBLIC include
