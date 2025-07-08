@@ -26,7 +26,8 @@ namespace LPG
     std::string strForConnection_;
     std::bitset<3> waysToSave_; // 0 - console, 1 - database, 2 - system
     std::string nameOfApplication_;
-
+    std::bitset<8> typesOfLogs_; // 0 - debug, 1 - info, 2 - notice, 3 - warning, 4 - error, 5 - critical, 6 - alert, 7 - emergency
+    std::int64_t numOfRows_;
 
     const char* getDateTime__() const;
     void swap__(Logger&);
