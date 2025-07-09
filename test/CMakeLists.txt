@@ -24,8 +24,8 @@ gtest_discover_tests(tests)
 include_directories(../include)
 include_directories(${POSTGRESQL_INCLUDE_DIR})
 target_link_libraries(GB
-        PRIVATE pq
-        PRIVATE tomlplusplus::tomlplusplus
+        pq
+        tomlplusplus::tomlplusplus
         stdc++
 )
 target_link_libraries(tests
@@ -33,4 +33,5 @@ target_link_libraries(tests
         pq
         tomlplusplus::tomlplusplus
         stdc++
+        m
 )
