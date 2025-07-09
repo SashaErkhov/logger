@@ -30,12 +30,12 @@ jobs:
           --health-retries 5
     steps:
       - name: Install dependencies
-        run: sudo apt update && sudo apt install -y make valgrind cmake
+        run: sudo apt update && sudo apt install -y make valgrind cmake postgresql-client
       - name: Install gtest manually
         run: sudo apt-get install -y libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/*.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
       - uses: actions/checkout@v3
       - name: build
-        run: mkdir build && cd build && cmake .. && make && cd test && make
+        run: mkdir -p build/test && mv test/*.toml build/test/ && cd build && cmake .. && make && cd test && make
       - name: Wait for PostgreSQL to be ready
         run: |
           for i in {1..10}; do
