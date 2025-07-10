@@ -356,3 +356,55 @@ TEST(LogPostgresql, eqOfMoving)
      PQclear(res);
      PQfinish(conn);
 }
+
+TEST(LogPostgresql, numOfApplication)
+{
+    dropTableDB("LPtest_forConn.toml");
+    LPG::Logger logger("LPtest_numOfApp.toml");
+    logger.debug("test-debug");
+    PGconn *conn = connection("LPtest_forConn.toml");
+    PGresult *res = PQexec(conn,"SELECT * FROM logs");
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
+        std::cerr << "Error of selecting from table: " << PQerrorMessage(conn) << std::endl;
+        PQclear(res);
+        PQfinish(conn);
+        throw std::logic_error("Error of selecting from table");
+    }
+    std::string appName=PQgetvalue(res,0,2);
+    EXPECT_EQ(appName, "test-app");
+    PQclear(res);
+    PQfinish(conn);
+}
+
+TEST(LogPostgresql, waysToSave)
+{
+    dropTableDB("LPtest_forConn.toml");
+    LPG::Logger logger("LPtest_waysToSave.toml");
+    logger.debug("test-debug");
+    logger.info("test-info");
+    logger.warning("test-warning");
+    logger.error("test-error");
+    PGconn *conn = connection("LPtest_forConn.toml");
+    PGresult *res =
+             PQexec(conn, "CREATE TABLE IF NOT EXISTS Logs (dateTime TIMESTAMP DEFAULT now(), level LogLevel, message TEXT);");
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        std::cerr <<"Error of creating table: " << PQerrorMessage(conn) << std::endl;
+        PQclear(res);
+        PQfinish(conn);
+        throw std::logic_error("Error of creating table");
+    }
+    PQclear(res);
+    res = PQexec(conn,"SELECT * FROM logs");
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
+        std::cerr << "Error of selecting from table: " << PQerrorMessage(conn) << std::endl;
+        PQclear(res);
+        PQfinish(conn);
+        throw std::logic_error("Error of selecting from table");
+    }
+    int nrows = PQntuples(res);
+    EXPECT_EQ(nrows,0);
+    PQclear(res);
+    PQfinish(conn);
+}
