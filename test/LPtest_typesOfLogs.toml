@@ -1,15 +1,8 @@
 [types_of_logs]
 debug = true
-info = true
-notice = true
-warning = true
-error = true
-critical = true
-alert = true
-emergency = true
 
 [ways_to_save]
-savingToConsole = true
+savingToConsole = false
 savingToDatabase = true
 savingToSystem = false
 

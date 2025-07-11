@@ -11,7 +11,7 @@ emergency = true
 [ways_to_save]
 savingToConsole = true
 savingToDatabase = false
-savingToSystem = true
+savingToSystem = false
 
 [database]
 dbname = "testdb"

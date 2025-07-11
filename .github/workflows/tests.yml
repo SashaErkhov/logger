@@ -11,8 +11,48 @@ permissions:
   contents: read
 
 jobs:
-  tests:
+  ubuntu:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 228:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d testdb"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y make valgrind cmake postgresql-client
+      - name: Install gtest manually
+        run: sudo apt-get install -y libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/*.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
+      - uses: actions/checkout@v3
+      - name: build
+        run: mkdir -p build/test && mv test/*.toml build/test/ && cd build && cmake .. && cmake --build . --config Release && cd test && cmake --build . --config Release
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          for i in {1..10}; do
+            if pg_isready -h 127.0.0.1 -p 228 -U postgres; then
+              echo "PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Waiting for PostgreSQL..."
+            sleep 5
+          done
+          exit 1
+      - name: test of LogPostgresql
+        run: cd build/test && ./tests
+      - name: test of memory of LogPostgresql
+        run: cd build/test && valgrind --tool=memcheck --leak-check=full --undef-value-errors=no --error-exitcode=111 ./tests
+  apple:
+    runs-on: macos-latest
     timeout-minutes: 10
     services:
       postgres:
@@ -51,3 +91,82 @@ jobs:
         run: cd build/test && ./tests
       - name: test of memory of LogPostgresql
         run: cd build/test && valgrind --tool=memcheck --leak-check=full --undef-value-errors=no --error-exitcode=111 ./tests
+  windows: # was created with chat gpt
+    runs-on: windows-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 228:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d testdb"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Chocolatey packages
+        shell: pwsh
+        run: |
+          choco install -y make cmake postgresql drmemory
+          refreshenv
+
+      - name: Add PostgreSQL to PATH
+        shell: pwsh
+        run: |
+          # Chocolatey places Postgres client tools under C:\Program Files\PostgreSQL\<ver>\bin
+          $pgBin = Get-ChildItem 'C:\Program Files\PostgreSQL' -Directory | Select-Object -Last 1 | Split-Path -Leaf
+          $path = "C:\Program Files\PostgreSQL\$pgBin\bin"
+          [Environment]::SetEnvironmentVariable('Path', $env:Path + ";$path", 'Process')
+
+      - name: Install Googletest via vcpkg
+        shell: pwsh
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git vcpkg
+          .\vcpkg\bootstrap-vcpkg.bat
+          .\vcpkg\vcpkg.exe install gtest
+          # Tell CMake where to find vcpkg
+          $Env:VCPKG_ROOT = "${{ github.workspace }}\vcpkg"
+
+      - name: Configure & build
+        shell: pwsh
+        run: |
+          mkdir build
+          cd build
+          cmake .. `
+            -DCMAKE_TOOLCHAIN_FILE=$Env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake `
+            -G "MinGW Makefiles"
+          cmake --build . --config Release
+
+      - name: Wait for PostgreSQL to be ready
+        shell: pwsh
+        run: |
+          for ($i = 0; $i -lt 10; $i++) {
+            if (& pg_isready -h 127.0.0.1 -p 228 -U postgres) {
+              Write-Host "PostgreSQL is ready"
+              exit 0
+            }
+            Write-Host "Waiting for PostgreSQL…"
+            Start-Sleep -Seconds 5
+          }
+          Write-Error "PostgreSQL did not become ready in time."
+          exit 1
+
+      - name: Run unit tests
+        shell: pwsh
+        run: |
+          $testExe = Join-Path $PWD 'build\test\tests.exe'
+          & $testExe
+
+      - name: Memory check with Dr. Memory
+        shell: pwsh
+        run: |
+          $testExe = Join-Path $PWD 'build\test\tests.exe'
+          drmemory --batch --leaks -- $testExe

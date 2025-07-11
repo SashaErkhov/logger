@@ -408,3 +408,41 @@ TEST(LogPostgresql, waysToSave)
     PQclear(res);
     PQfinish(conn);
 }
+
+TEST(LogPostgresql, typesOfLog)
+{
+    dropTableDB("LPtest_forConn.toml");
+    LPG::Logger logger("LPtest_typesOfLogs.toml");
+    logger.debug("test-debug");
+    logger.info("test-info");
+    logger.warning("test-warning");
+    logger.error("test-error");
+    logger.critical("test-critical");
+    logger.alert("test-alert");
+    logger.emergency("test-emergency");
+    PGconn *conn = connection("LPtest_forConn.toml");
+    PGresult *res = PQexec(conn,"SELECT * FROM logs");
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
+        std::cerr << "Error of selecting from table: " << PQerrorMessage(conn) << std::endl;
+        PQclear(res);
+        PQfinish(conn);
+        throw std::logic_error("Error of selecting from table");
+    }
+    int nrows = PQntuples(res);
+    EXPECT_EQ(nrows,1);
+    std::string message=PQgetvalue(res,0,3);
+    EXPECT_EQ(message,"test-debug");
+    PQclear(res);
+    PQfinish(conn);
+}
+
+// TEST(LogPostgresql, systemLog)
+// {
+//     dropTableDB("LPtest_forConn.toml");
+//     LPG::Logger logger("LPtest_systemLog.toml");
+//     logger.debug("test-debug");
+//     logger.info("test-info");
+//     logger.warning("test-warning");
+//     logger.error("test-error");
+// }

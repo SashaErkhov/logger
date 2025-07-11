@@ -12,9 +12,9 @@ alert = true
 emergency = true
 
 [ways_to_save]
-savingToConsole = true
+savingToConsole = false
 savingToDatabase = true
-savingToSystem = true
+savingToSystem = false
 
 [database]
 dbname = "testdb"
