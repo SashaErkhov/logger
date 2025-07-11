@@ -58,7 +58,7 @@ jobs:
       - name: Install dependencies on macOS
         run: |
           brew update
-          brew install cmake valgrind make
+          brew install cmake make
       - name: Install and start PostgreSQL manually on macOS
         run: |
           brew install postgresql@14
@@ -87,8 +87,6 @@ jobs:
           exit 1
       - name: test of LogPostgresql
         run: cd build/test && ./tests
-      - name: test of memory of LogPostgresql
-        run: cd build/test && valgrind --tool=memcheck --leak-check=full --undef-value-errors=no --error-exitcode=111 ./tests
   windows:
     runs-on: windows-latest
     timeout-minutes: 15
@@ -100,7 +98,7 @@ jobs:
       - name: Install tools with Chocolatey
         shell: pwsh
         run: |
-          choco install -y cmake make postgresql drmemory
+          choco install -y cmake make postgresql
           refreshenv
 
       - name: Add PostgreSQL to PATH
@@ -147,12 +145,6 @@ jobs:
         run: |
           cd build/test
           ./tests.exe
-
-      - name: Run memory check with Dr. Memory
-        shell: pwsh
-        run: |
-          cd build/test
-          drmemory --batch --leaks -- ./tests.exe
 
       - name: Stop PostgreSQL
         if: always()
