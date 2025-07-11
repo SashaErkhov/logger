@@ -55,8 +55,10 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 10
     steps:
-      - name: Install dependencies
-        run: sudo apt update && sudo apt install -y make valgrind cmake postgresql-client
+      - name: Install dependencies on macOS
+        run: |
+          brew update
+          brew install cmake valgrind make
       - name: Install and start PostgreSQL manually on macOS
         run: |
           brew install postgresql@14
@@ -68,7 +70,7 @@ jobs:
           psql -p 228 -c "CREATE USER postgres WITH PASSWORD 'postgres';"
           psql -p 228 -c "ALTER ROLE postgres WITH SUPERUSER;"
       - name: Install gtest manually
-        run: sudo apt-get install -y libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/*.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
+        run: brew install -y libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/*.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
       - uses: actions/checkout@v3
       - name: build
         run: mkdir -p build/test && mv test/*.toml build/test/ && cd build && cmake .. && make && cd test && make
