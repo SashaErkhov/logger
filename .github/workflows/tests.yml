@@ -59,12 +59,11 @@ jobs:
         run: |
           brew update
           brew install cmake make
-      - name: Install and start PostgreSQL manually on macOS
+      - name: Start PostgreSQL on port 228 manually
         run: |
           brew install postgresql@14
-          brew link postgresql@14 --force
-          initdb -D /usr/local/var/postgres
-          pg_ctl -D /usr/local/var/postgres -o "-p 228" -l /usr/local/var/postgres/server.log start
+          initdb -D "$HOME/pgdata"
+          /opt/homebrew/opt/postgresql@14/bin/postgres -D "$HOME/pgdata" -p 228 &
           sleep 5
           createdb -p 228 testdb
           psql -p 228 -c "CREATE USER postgres WITH PASSWORD 'postgres';"
