@@ -11,7 +11,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 enable_testing()
 
-add_executable(tests
+add_executable(LPGtests
         LPtests.cpp
 )
 
@@ -19,12 +19,12 @@ add_executable(GB
         GlobalTest.cpp
 )
 include(GoogleTest)
-gtest_discover_tests(tests)
+gtest_discover_tests(LPGtests)
 target_link_libraries(GB
         LogPostgresql
         stdc++
 )
-target_link_libraries(tests
+target_link_libraries(LPGtests
         LogPostgresql
         GTest::gtest_main
         stdc++

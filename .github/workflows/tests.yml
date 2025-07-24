@@ -48,6 +48,6 @@ jobs:
           done
           exit 1
       - name: test of LogPostgresql
-        run: cd build/test && ./tests
+        run: cd build/test && ./LPGtests
       - name: test of memory of LogPostgresql
-        run: cd build/test && valgrind --tool=memcheck --leak-check=full --undef-value-errors=no --error-exitcode=111 ./tests
+        run: cd build/test && valgrind --tool=memcheck --leak-check=full --undef-value-errors=no --error-exitcode=111 ./LPGtests
