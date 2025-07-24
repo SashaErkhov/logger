@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(logger VERSION 2.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -10,6 +11,7 @@ FetchContent_Declare(
         GIT_TAG v3.4.0
 )
 FetchContent_MakeAvailable(tomlplusplus)
+
 add_library(LogPostgresql STATIC
         src/LogPostgresql.cpp
 )
