@@ -3,7 +3,7 @@
 using namespace LPG;
 
 int main(){
-  Logger logger("test.txt");
+  Logger logger("test.toml");
   logger.debug("test-debug");
   logger.info("test-info");
   logger.notice("test-notice");

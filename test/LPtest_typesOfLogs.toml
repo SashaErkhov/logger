@@ -1,0 +1,14 @@
+[types_of_logs]
+debug = true
+
+[ways_to_save]
+savingToConsole = false
+savingToDatabase = true
+savingToSystem = false
+
+[database]
+dbname = "testdb"
+user = "postgres"
+password = "postgres"
+host = "localhost"
+port = "228"

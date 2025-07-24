@@ -3,15 +3,7 @@ name: logger
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - '.github/workflows/*'
   pull_request:
-    branches:
-      - main
-    paths-ignore:
-      - '.github/workflows/*'
 
 permissions:
   checks: write
@@ -19,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  tests:
+  ubuntu:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
@@ -30,30 +22,24 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: testdb
         ports:
-          - 5432:5432
+          - 228:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d testdb"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
     steps:
-      - name: Install make
-        run: sudo apt install make
-      - name: Install valgrind
-        run: sudo apt install valgrind
-      - name: Install cmake
-        run: sudo apt install cmake
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y make valgrind cmake postgresql-client
       - name: Install gtest manually
-        run: sudo apt-get install libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/*.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
+        run: sudo apt-get install -y libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/*.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
       - uses: actions/checkout@v3
       - name: build
-        run: mkdir build && cd build && cmake .. && make && cd test && make
-      - name: create file test.txt
-        run: cd build/test && echo "dbname=testdb user=postgres password=postgres host=127.0.0.1 port=5432" > test.txt
+        run: mkdir -p build/test && mv test/*.toml build/test/ && cd build && cmake .. && cmake --build . --config Release && cd test && cmake --build . --config Release
       - name: Wait for PostgreSQL to be ready
         run: |
           for i in {1..10}; do
-            if pg_isready -h 127.0.0.1 -p 5432 -U postgres; then
+            if pg_isready -h 127.0.0.1 -p 228 -U postgres; then
               echo "PostgreSQL is ready"
               exit 0
             fi
@@ -62,6 +48,6 @@ jobs:
           done
           exit 1
       - name: test of LogPostgresql
-        run: cd build/test && ./tests
+        run: cd build/test && ./LPGtests
       - name: test of memory of LogPostgresql
-        run: cd build/test && valgrind --tool=memcheck --leak-check=full --undef-value-errors=no --error-exitcode=111 ./tests
+        run: cd build/test && valgrind --tool=memcheck --leak-check=full --undef-value-errors=no --error-exitcode=111 ./LPGtests

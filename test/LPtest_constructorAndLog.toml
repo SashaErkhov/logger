@@ -1,0 +1,21 @@
+[types_of_logs]
+debug = true
+info = true
+notice = true
+warning = true
+error = true
+critical = true
+alert = true
+emergency = true
+
+[ways_to_save]
+savingToConsole = true
+savingToDatabase = true
+savingToSystem = false
+
+[database]
+dbname = "testdb"
+user = "postgres"
+password = "postgres"
+host = "localhost"
+port = "228"
